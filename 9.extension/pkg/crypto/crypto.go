@@ -18,6 +18,9 @@ import (
 )
 
 type (
+
+	// Crypto encapsulates logic of encrypt/decrypt strings 
+	// using AES cipher. 
 	Crypto struct {
 		logger logger.Logger
 		config *config
@@ -31,22 +34,26 @@ type (
 	}
 )
 
+// New create instance of Crypto struct
 func New(logger logger.Logger) *Crypto {
 	return &Crypto{logger: logger}
 }
 
+// Init method initialize the Crypto component. It is called by Dapr runtime 
+// with user-defined configuration metadata from YAML manifest files.
 func (c *Crypto) Init(metadata custom.Metadata) error {
 
+	// Get configuration from metadata. This is set in `crypto.yaml` file
 	c.config = &config{
 		base: metadata.Properties["base"],
 		salt: metadata.Properties["salt"],
 		bits: getIntOrDefault(metadata.Properties["pwd"], 256),
 	}
 
-	//create a secret passphrase
+	// create a secret passphrase
 	secret := pbkdf2.Key([]byte(c.config.base), []byte(c.config.salt), 65536, c.config.bits/8, sha1.New)
 
-	//create AES cipher block with secret
+	// create AES cipher block with secret
 	block, err := aes.NewCipher(secret)
 	if err != nil {
 		return err
@@ -58,6 +65,8 @@ func (c *Crypto) Init(metadata custom.Metadata) error {
 	return nil
 }
 
+// RegisterServer registers auto-generated Crypto RPC proto stub in provided gRPC server. It recives 
+// internal `grpc.Server` instance from Dapr runtime to register new gRPC endpoints. 
 func (c *Crypto) RegisterServer(s *grpc.Server) error {
 
 	RegisterCryptoServer(s, c)
@@ -67,6 +76,7 @@ func (c *Crypto) RegisterServer(s *grpc.Server) error {
 	return nil
 }
 
+// Encrypt method encrypts normal string to base64 encrypted strings using AES cipher.
 func (c *Crypto) Encrypt(ctx context.Context, req *EncryptRequest) (*EncryptResponse, error) {
 
 	plaintext := []byte(req.Value)
@@ -88,7 +98,7 @@ func (c *Crypto) Encrypt(ctx context.Context, req *EncryptRequest) (*EncryptResp
 	}, nil
 }
 
-//Decrypt method Crypto gRPC
+// Decrypt method decrypts encrypted strings back to normal strings using AES cipher.
 func (c *Crypto) Decrypt(ctx context.Context, req *DecryptRequest) (*DecryptResponse, error) {
 
 	encrypted, _ := base64.URLEncoding.DecodeString(req.Value)

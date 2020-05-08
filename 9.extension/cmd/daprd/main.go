@@ -320,9 +320,9 @@ func main() {
 			}),
 		),
 
-		// You can extend Dapr by creating your own Daprd binary by doing following
-		// 1. Create a GO project and copy this "main.go". Use Dapr and Component-contrib as library in the project
-		// 2. Uncomment below code to add your custom feature as GRPC endpoint.
+		// You can extend Dapr by creating your own daprd binary. Here are the steps
+		// 1. Create a new Go project and copy this "main.go". Use Dapr and component-contrib as libraries.
+		// 2. Uncomment the code below to add your custom components. These are exposed via gRPC endpoints.
 		runtime.WithCustomComponents(
 			customs_loader.New("mycrypto", func() customs_loader.CustomComponent {
 				return custom_crypto.New(logContrib)
